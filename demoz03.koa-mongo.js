@@ -1,46 +1,54 @@
-var mongo = require('mongodb');
-var Grid = require('gridfs-stream');
+var fs = require("fs");
+var path = require("path");
 var fs = require('fs');
 var koa = require('koa');
+var serve = require('koa-static');
+var bodyParser = require("koa-bodyparser");
+var Router = require('koa-router');
+var router = Router();
+var mongoose = require('mongoose');
+var mongo = mongoose.mongo; // var mongo = require('mongodb');
+var Grid = require('gridfs-stream');
+Grid.mongo = mongoose.mongo;
 
-var router = require("koa-router");
-//var bodyParser = require("koa-bodyparser");
-//var fs = require("fs");
-//var path = require("path");
-
-
-
+// the app
 var app = module.exports = koa();
-app.use(router(app));
+app.use(serve('./public'));
 
-var db = new mongo.Db('imgs', new mongo.Server("127.0.0.1", 27017));
+// the pano img store
+var imgs;
 
-var connect = function(){
-    db.open(function (err) {
-        if (err) return handleError(err);
-        var gfs = Grid(db, mongo);
+// configure
+var panourl = 'mongodb://localhost:27017/imgs';
 
-        // all set!
-    });
-};
-function getfile( filename, ctx ) {
-  var readstream = gfs.createReadStream({
-      filename: filename
-  });
+// route sites
+var sites = new Router();
+sites.get('/', function *(next) { this.body = 'all sites'; });
+sites.get('/:id', function *(next) { this.body = 'site#' + this.params.id; });
 
-  //error handling, e.g. file does not exist
-  readstream.on('error', function (err) {
-      console.log('An error occurred!', err);
-      throw err;
-  });
+// TODO: route floors, links, etc
 
-  readstream.pipe(ctx.res);
-}
+// pack these routes
+var api = new Router({ prefix: '/api' });
+api.get('/site/:id', sites.routes()); // /api/site/:id
 
-//app.use(bodyParser());
-app.get("/", function(){
-    var ctx = this;
-    ctx.body = 'home';
+// use the API router
+app.use(api.routes());
+
+var img = new Router({ prefix: '/img' });
+img.get('/:id', function *() {
+    this.body = imgs.createReadStream({ filename: this.params.id });
+    this.body.pipe(this.res);
+});
+app.use(img.routes());
+
+router.get('/router', function *(next) { this.body = 'router'; });
+app.use(router.routes()).use(router.allowedMethods());
+
+var panoconn = mongoose.createConnection(panourl);
+panoconn.once('open', function () {
+    imgs = Grid(panoconn.db);
 });
 
+// app switch on~
 app.listen(8090);
