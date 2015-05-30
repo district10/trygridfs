@@ -2,7 +2,7 @@
 
 ```
 MongoDB(GridFS): img/green.png
-Filesystem     : blue.png 
+FS             : blue.png 
 ```
 ![](/gridfs/green.png)
 ![](/blue.png)

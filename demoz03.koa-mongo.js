@@ -35,11 +35,16 @@ api.get('/site/:id', sites.routes()); // /api/site/:id
 // use the API router
 app.use(api.routes());
 
-var img = new Router({ prefix: '/img' });
+var img = new Router({ prefix: '/gridfs' });
 img.get('/:id', function *() {
     this.body = imgs.createReadStream({ filename: this.params.id });
     this.body.pipe(this.res);
 });
+img.post('/', function*() {
+   this.body = this.request;
+});
+
+
 app.use(img.routes());
 
 router.get('/router', function *(next) { this.body = 'router'; });
