@@ -6,6 +6,7 @@ var serve = require('koa-static');
 var bodyParser = require("koa-bodyparser");
 var Router = require('koa-router');
 var router = Router();
+var gridform = require('gridform');
 var mongoose = require('mongoose');
 var mongo = mongoose.mongo; // var mongo = require('mongodb');
 var Grid = require('gridfs-stream');
@@ -42,8 +43,9 @@ img.get('/:id', function *() {
 });
 img.post('/', function*() {
    this.body = this.request;
+   var form = gridform();
+   console.log(JSON.stringify(JSON.parse(form)));
 });
-
 
 app.use(img.routes());
 
@@ -53,6 +55,9 @@ app.use(router.routes()).use(router.allowedMethods());
 var panoconn = mongoose.createConnection(panourl);
 panoconn.once('open', function () {
     imgs = Grid(panoconn.db);
+    gridform.db = panoconn.db;
+    gridform.mongo = mongo;
+    console.log('DB connected.');
 });
 
 // app switch on~
